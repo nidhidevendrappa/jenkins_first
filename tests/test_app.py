@@ -20,6 +20,7 @@ def test_home_route(client):
     data = response.get_json()
     assert data["status"] == "running"
     assert "message" in data
+    assert data["version"] == "2.0.0"
 
 def test_health_route(client):
     """Test the health check endpoint."""
@@ -27,3 +28,12 @@ def test_health_route(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["status"] == "healthy"
+
+def test_version_route(client):
+    """Test the new /version endpoint."""
+    response = client.get("/version")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["version"] == "2.0.0"
+    assert data["deployed_by"] == "Jenkins CI/CD"
+    assert "timestamp" in data
