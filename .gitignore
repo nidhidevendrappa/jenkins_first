@@ -1,0 +1,12 @@
+# Git ignore file for Jenkins CI/CD project
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.DS_Store
+Thumbs.db
