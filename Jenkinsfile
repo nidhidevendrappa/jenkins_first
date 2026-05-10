@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Set your Python venv path
         VENV_DIR = "venv"
     }
 
@@ -17,13 +16,40 @@ pipeline {
 
         stage('Setup Python Environment') {
             steps {
-                echo '🐍 Setting up virtual environment...'
-                // Windows
+                echo '🐍 Checking virtual environment...'
                 bat '''
-                    python -m venv %VENV_DIR%
+                    @echo off
+
+                    REM ✅ Step 1: Create venv ONLY if it does not already exist
+                    IF NOT EXIST %VENV_DIR%\\Scripts\\activate.bat (
+                        echo [INFO] venv not found. Creating virtual environment...
+                        python -m venv %VENV_DIR%
+                    ) ELSE (
+                        echo [INFO] venv already exists. Skipping creation.
+                    )
+
+                    REM ✅ Step 2: Activate venv
                     call %VENV_DIR%\\Scripts\\activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+
+                    REM ✅ Step 3: Reinstall packages ONLY if requirements.txt has changed
+                    REM   Compare checksum of requirements.txt with last saved checksum
+                    certutil -hashfile requirements.txt MD5 > requirements_current.md5
+                    IF EXIST requirements_last.md5 (
+                        FC /B requirements_current.md5 requirements_last.md5 >nul 2>&1
+                        IF ERRORLEVEL 1 (
+                            echo [INFO] requirements.txt changed. Installing packages...
+                            pip install --upgrade pip
+                            pip install -r requirements.txt
+                            copy /Y requirements_current.md5 requirements_last.md5
+                        ) ELSE (
+                            echo [INFO] requirements.txt unchanged. Skipping pip install.
+                        )
+                    ) ELSE (
+                        echo [INFO] First run. Installing packages...
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        copy /Y requirements_current.md5 requirements_last.md5
+                    )
                 '''
             }
         }
